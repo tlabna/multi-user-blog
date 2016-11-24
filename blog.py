@@ -53,12 +53,19 @@ class BlogHandler (webapp2.RequestHandler):
         self.set_secure_cookie('user_id', str(user.key().id()))
 
     def logout(self):
-        self.response.headers.add_header('Set-Cookie', 'user_is=; Path=/')
+        self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
 
     def initialize(self, *a, **kw):
         webapp2.RequestHandler.initialize(self, *a, **kw)
         uid = self.read_secure_cookie('user_id')
         self.user = uid and User.by_id(int(uid))
+
+    def getUserId(self):
+        user_id = self.read_secure_cookie('user_id')
+        if user_id:
+            return int(user_id.split('|')[0])
+        else:
+            return None
 
 # User Stuff
 
@@ -116,8 +123,13 @@ class Post(db.Model):
     content = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
     last_modified = db.DateTimeProperty(auto_now = True)
+    author = db.ReferenceProperty(User, required = True)
 
-    def render(self):
+    def render(self, user_id):
+        self._render_text = self.content.replace('\n', '<br>')
+        return render_str('post.html', p = self, user_id = user_id)
+
+    def render_permalink(self):
         self._render_text = self.content.replace('\n', '<br>')
         return render_str('post.html', p = self)
 
@@ -125,8 +137,23 @@ class Post(db.Model):
 
 class BlogFront(BlogHandler):
     def get(self):
+        # passing user_id to template for checks to show(or not) edit, like and comment buttons
+        user_id = self.getUserId()
         posts = Post.all().order('-created')
-        self.render('front.html', posts = posts)
+        self.render('front.html', posts = posts, user_id = user_id)
+
+    def post(self):
+        action = self.request.get('action')
+        post_id = self.request.get('post_id')
+
+        # If logged out user tries to create, edit, delete, or like a blog post, they are redirected to login page
+        if not self.getUserId():
+            self.redirect('/login')
+
+        # If user clicks on edit/delete button redirect to edit page
+        if action == 'edit/delete':
+            self.redirect('/blog/edit/%s' % post_id)
+
 
 class NewPost(BlogHandler):
     def get(self):
@@ -137,13 +164,13 @@ class NewPost(BlogHandler):
 
     def post(self):
         if not self.user:
-            self.redirect('/blog')
+            self.redirect('/login')
 
         subject = self.request.get('subject')
         content = self.request.get('content')
 
         if subject and content:
-            post = Post(parent = blog_key(), subject = subject, content = content)
+            post = Post(parent = blog_key(), subject = subject, content = content, author = self.user.key())
             post.put()
             self.redirect('/blog/%s' % str(post.key().id()))
         else:
@@ -153,13 +180,13 @@ class NewPost(BlogHandler):
 class PostPage(BlogHandler):
     def get(self, post_id):
         key = db.Key.from_path('Post', int(post_id), parent = blog_key())
-        post = db.get(key)
+        post = Post.get(key)
 
         if not post:
             self.error(404)
             return
 
-        self.render('permalink.html', post = post)
+        self.render("permalink.html", post = post, user_id = post.author.key().id())
 
 USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
 def valid_username(username):
@@ -242,7 +269,7 @@ class Login(BlogHandler):
 class Logout(BlogHandler):
     def get(self):
         self.logout()
-        self.redirect('/blog')
+        self.redirect('/login')
 
 class Welcome(BlogHandler):
     def get(self):
@@ -251,6 +278,54 @@ class Welcome(BlogHandler):
         else:
             self.redirect('/signup')
 
+class EditDeletePost(BlogHandler):
+    def get(self, post_id):
+        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+        post = db.get(key)
+        user_id = self.getUserId()
+
+        if not post:
+            self.error(404)
+            return
+
+        # Checking if the current user is in fact the author of the post, if not redirect to blog
+        if post.author.key().id() == user_id:
+            self.render("editpost.html", subject = post.subject, content = post.content)
+        else:
+            self.redirect('/login')
+
+    def post(self, post_id):
+        subject = self.request.get('subject')
+        content = self.request.get('content')
+        action = self.request.get('action')
+        post_key = db.Key.from_path('Post', int(post_id), parent = blog_key())
+        user_id = self.getUserId()
+
+        # If logged out or incorrect user user tries to edit, delete a blog post, they are redirected to login page
+        if (not user_id) or (post_id != user_id):
+            self.redirect('/login')
+            return
+
+        if action == 'save edit':
+            if subject and content:
+                # Updating post entity in DB
+                post = db.get(post_key)
+                post.subject = subject
+                post.content = content
+                post.put()
+
+                self.redirect('/blog/%s' % str(post.key().id()))
+            else:
+                error = 'Both subject and content must be filled in!'
+                self.render('editpost.html', subject = subject, content = content, error = error)
+
+        if action == 'delete':
+            db.delete(post_key)
+            self.redirect('/postdelete.html')
+
+class DeletePost(BlogHandler):
+    def get(self):
+        self.render('postdelete.html')
 
 app = webapp2.WSGIApplication([('/blog/?', BlogFront),
                                ('/blog/(\d+)', PostPage),
@@ -258,6 +333,8 @@ app = webapp2.WSGIApplication([('/blog/?', BlogFront),
                                ('/signup', Register),
                                ('/login', Login),
                                ('/logout', Logout),
-                               ('/blog/welcome', Welcome)
+                               ('/blog/welcome', Welcome),
+                               ('/blog/edit/(\d+)', EditDeletePost),
+                               ('/postdelete.html', DeletePost)
                                ],
                               debug=True)
