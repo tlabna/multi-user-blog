@@ -4,11 +4,12 @@ import hmac
 import random
 from string import letters
 import re
+import json
 
 import webapp2
 import jinja2
 
-from google.appengine.ext import db
+from google.appengine.ext import ndb
 
 # Initializing Jinja and directing to the templates directory
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
@@ -50,7 +51,7 @@ class BlogHandler (webapp2.RequestHandler):
         return cookie_val and check_secure_val(cookie_val)
 
     def login(self, user):
-        self.set_secure_cookie('user_id', str(user.key().id()))
+        self.set_secure_cookie('user_id', str(user.key.id()))
 
     def logout(self):
         self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
@@ -83,12 +84,13 @@ def valid_pw(name, password, h):
     return h == make_pw_hash(name, password, salt)
 
 def users_key(group = 'default'):
-    return db.Key.from_path('users', group)
+    return ndb.Key('users', group)
 
-class User(db.Model):
-    name = db.StringProperty(required = True)
-    pw_hash = db.StringProperty(required = True)
-    email = db.StringProperty()
+class User(ndb.Model):
+    name = ndb.StringProperty(required = True)
+    pw_hash = ndb.StringProperty(required = True)
+    email = ndb.StringProperty()
+    likes = ndb.IntegerProperty(repeated = True, default = None)
 
     @classmethod
     def by_id(cls, uid):
@@ -96,7 +98,7 @@ class User(db.Model):
 
     @classmethod
     def by_name(cls, name):
-        u = User.all().filter('name =', name).get()
+        u = User.query(User.name == 'name').get()
         return u
 
     @classmethod
@@ -116,14 +118,16 @@ class User(db.Model):
 # Blog Stuff
 
 def blog_key(name = 'default'):
-    return db.Key.from_path('blogs', name)
+    return ndb.Key('blogs', name)
 
-class Post(db.Model):
-    subject = db.StringProperty(required = True)
-    content = db.TextProperty(required = True)
-    created = db.DateTimeProperty(auto_now_add = True)
-    last_modified = db.DateTimeProperty(auto_now = True)
-    author = db.ReferenceProperty(User, required = True)
+class Post(ndb.Model):
+    subject = ndb.StringProperty(required = True)
+    content = ndb.TextProperty(required = True)
+    created = ndb.DateTimeProperty(auto_now_add = True)
+    last_modified = ndb.DateTimeProperty(auto_now = True)
+    author = ndb.KeyProperty(kind = User, required = True)
+    likes = ndb.IntegerProperty(default = 0)
+    liked_by = ndb.IntegerProperty(repeated = True, default = None) # This will take a list of user_ids
 
     def render(self, user_id):
         self._render_text = self.content.replace('\n', '<br>')
@@ -139,12 +143,14 @@ class BlogFront(BlogHandler):
     def get(self):
         # passing user_id to template for checks to show(or not) edit, like and comment buttons
         user_id = self.getUserId()
-        posts = Post.all().order('-created')
+        posts = Post.query().order(-Post.created)
+
         self.render('front.html', posts = posts, user_id = user_id)
 
     def post(self):
         action = self.request.get('action')
-        post_id = self.request.get('post_id')
+        post_key = ndb.Key(urlsafe=self.request.get('post_key'))
+        user_id = self.getUserId()
 
         # If logged out user tries to create, edit, delete, or like a blog post, they are redirected to login page
         if not self.getUserId():
@@ -152,8 +158,7 @@ class BlogFront(BlogHandler):
 
         # If user clicks on edit/delete button redirect to edit page
         if action == 'edit/delete':
-            self.redirect('/blog/edit/%s' % post_id)
-
+            self.redirect('/blog/edit/%s' % post_key.id())
 
 class NewPost(BlogHandler):
     def get(self):
@@ -170,23 +175,23 @@ class NewPost(BlogHandler):
         content = self.request.get('content')
 
         if subject and content:
-            post = Post(parent = blog_key(), subject = subject, content = content, author = self.user.key())
+            post = Post(parent = blog_key(), subject = subject, content = content, author = self.user.key)
             post.put()
-            self.redirect('/blog/%s' % str(post.key().id()))
+            self.redirect('/blog/%s' % str(post.key.id()))
         else:
             error = 'Both subject and content must be filled in!'
             self.render('newpost.html', subject = subject, conetent = content, error = error)
 
 class PostPage(BlogHandler):
     def get(self, post_id):
-        key = db.Key.from_path('Post', int(post_id), parent = blog_key())
-        post = Post.get(key)
+        key = ndb.Key('Post', int(post_id), parent = blog_key())
+        post = key.get()
 
         if not post:
             self.error(404)
             return
 
-        self.render("permalink.html", post = post, user_id = post.author.key().id())
+        self.render("permalink.html", post = post, user_id = post.author.id())
 
 USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
 def valid_username(username):
@@ -279,9 +284,9 @@ class Welcome(BlogHandler):
             self.redirect('/signup')
 
 class EditDeletePost(BlogHandler):
-    def get(self, post_id):
-        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
-        post = db.get(key)
+    def get(self, post_key):
+        post_key = ndb.Key('Post', int(post_id), parent=blog_key())
+        post = post_key.get()
         user_id = self.getUserId()
 
         if not post:
@@ -289,7 +294,7 @@ class EditDeletePost(BlogHandler):
             return
 
         # Checking if the current user is in fact the author of the post, if not redirect to blog
-        if post.author.key().id() == user_id:
+        if post.author.id() == user_id:
             self.render("editpost.html", subject = post.subject, content = post.content)
         else:
             self.redirect('/login')
@@ -298,7 +303,7 @@ class EditDeletePost(BlogHandler):
         subject = self.request.get('subject')
         content = self.request.get('content')
         action = self.request.get('action')
-        post_key = db.Key.from_path('Post', int(post_id), parent = blog_key())
+        post_key = ndb.Key('Post', int(post_id), parent = blog_key())
         user_id = self.getUserId()
 
         # If logged out or incorrect user user tries to edit, delete a blog post, they are redirected to login page
@@ -309,23 +314,45 @@ class EditDeletePost(BlogHandler):
         if action == 'save edit':
             if subject and content:
                 # Updating post entity in DB
-                post = db.get(post_key)
+                post = post_key.get()
                 post.subject = subject
                 post.content = content
                 post.put()
 
-                self.redirect('/blog/%s' % str(post.key().id()))
+                self.redirect('/blog/%s' % str(post.id()))
             else:
                 error = 'Both subject and content must be filled in!'
                 self.render('editpost.html', subject = subject, content = content, error = error)
 
         if action == 'delete':
-            db.delete(post_key)
+            ndb.delete(post_key)
             self.redirect('/postdelete.html')
 
 class DeletePost(BlogHandler):
     def get(self):
         self.render('postdelete.html')
+
+class LikeHandler(BlogHandler):
+    def post(self):
+        post_id = int(self.request.get('post_key'))
+        user_id = self.getUserId()
+        post = Post.get_by_id(post_id, parent = blog_key())
+
+        # Check if user has already liked post
+        if user_id in post.liked_by:
+            post.likes -= 1
+            post.liked_by.remove(user_id)
+            self.user.likes.remove(post_id)
+            self.write(json.dumps(({'likes': post.likes})))
+            post.put()
+            self.user.put()
+        else:
+            post.likes += 1
+            post.liked_by.append(user_id)
+            self.user.likes.append(post_id)
+            self.write(json.dumps(({'likes': post.likes})))
+            post.put()
+            self.user.put()
 
 app = webapp2.WSGIApplication([('/blog/?', BlogFront),
                                ('/blog/(\d+)', PostPage),
@@ -335,6 +362,7 @@ app = webapp2.WSGIApplication([('/blog/?', BlogFront),
                                ('/logout', Logout),
                                ('/blog/welcome', Welcome),
                                ('/blog/edit/(\d+)', EditDeletePost),
-                               ('/postdelete.html', DeletePost)
+                               ('/postdelete.html', DeletePost),
+                               ('/like', LikeHandler)
                                ],
                               debug=True)
