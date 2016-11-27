@@ -16,9 +16,14 @@
 <!-- If the current user is the author of a post, then show the edit/delete button -->
 {% if p.author.id() == user_id %}
 <form method="post">
-    <input type="hidden" name="post_id" value="{{ p.key.urlsafe() }}">
+    <input type="hidden" name="post_id" value="{{ p.key.id() }}">
     <input type="submit" name="action" value="edit/delete">
 </form>
+<div>
+    <a href="#" class="like-noclick" data-key="{{ p.key.id() }}">
+        <span>{{p.likes}}</span> Likes
+    </a>
+</div>
 {% else %}
 <!-- Only display like button if user is not the author of a post -->
 <div>

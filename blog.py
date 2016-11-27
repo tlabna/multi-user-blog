@@ -98,7 +98,7 @@ class User(ndb.Model):
 
     @classmethod
     def by_name(cls, name):
-        u = User.query(User.name == 'name').get()
+        u = User.query(User.name == name).get()
         return u
 
     @classmethod
@@ -149,7 +149,7 @@ class BlogFront(BlogHandler):
 
     def post(self):
         action = self.request.get('action')
-        post_key = ndb.Key(urlsafe=self.request.get('post_key'))
+        post_id = self.request.get('post_id')
         user_id = self.getUserId()
 
         # If logged out user tries to create, edit, delete, or like a blog post, they are redirected to login page
@@ -158,7 +158,7 @@ class BlogFront(BlogHandler):
 
         # If user clicks on edit/delete button redirect to edit page
         if action == 'edit/delete':
-            self.redirect('/blog/edit/%s' % post_key.id())
+            self.redirect('/blog/edit/%s' % post_id)
 
 class NewPost(BlogHandler):
     def get(self):
@@ -264,6 +264,7 @@ class Login(BlogHandler):
         password = self.request.get('password')
 
         u = User.login(username, password)
+
         if u:
             self.login(u)
             self.redirect('/blog')
@@ -284,9 +285,9 @@ class Welcome(BlogHandler):
             self.redirect('/signup')
 
 class EditDeletePost(BlogHandler):
-    def get(self, post_key):
-        post_key = ndb.Key('Post', int(post_id), parent=blog_key())
-        post = post_key.get()
+    def get(self, post_id):
+        post_id = int(post_id)
+        post = Post.get_by_id(post_id, parent = blog_key())
         user_id = self.getUserId()
 
         if not post:
@@ -305,27 +306,27 @@ class EditDeletePost(BlogHandler):
         action = self.request.get('action')
         post_key = ndb.Key('Post', int(post_id), parent = blog_key())
         user_id = self.getUserId()
+        post = post_key.get()
 
         # If logged out or incorrect user user tries to edit, delete a blog post, they are redirected to login page
-        if (not user_id) or (post_id != user_id):
+        if (not user_id) or (post.author.id() != user_id):
             self.redirect('/login')
             return
 
         if action == 'save edit':
             if subject and content:
                 # Updating post entity in DB
-                post = post_key.get()
                 post.subject = subject
                 post.content = content
                 post.put()
 
-                self.redirect('/blog/%s' % str(post.id()))
+                self.redirect('/blog/%s' % str(post.key.id()))
             else:
                 error = 'Both subject and content must be filled in!'
                 self.render('editpost.html', subject = subject, content = content, error = error)
 
         if action == 'delete':
-            ndb.delete(post_key)
+            post_key.delete()
             self.redirect('/postdelete.html')
 
 class DeletePost(BlogHandler):
