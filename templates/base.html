@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-        <link type="text/css" rel="stylesheet" href="/css/main.css" />
-        <title>Tamer's Blog</title>
-    </head>
-    <body>
-        <a href="/blog" class="main-title">
+
+<head>
+    <link type="text/css" rel="stylesheet" href="/css/main.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <title>Tamer's Blog</title>
+</head>
+
+<body>
+    <a href="/blog" class="main-title">
             Multi User Blog
         </a>
-        <div id="content">
-            {% block content %}
-            {% endblock %}
-        </div>
-    </body>
+    <div id="content">
+        {% block content %} {% endblock %}
+    </div>
+    <!-- add ajax script at bottom of page so everything is loaded before the script -->
+    <script src="/js/script.js"></script>
+</body>
+
 </html>
