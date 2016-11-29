@@ -1,5 +1,7 @@
+import json
+
 from google.appengine.ext import ndb
-from models.post import Post
+from models.models import Post, Comment
 from handlers.bloghandler import BlogHandler
 from handlers.util import *
 
@@ -94,3 +96,24 @@ class EditDeletePost(BlogHandler):
 class DeletePost(BlogHandler):
     def get(self):
         self.render('postdelete.html')
+
+
+# Comment Handlers
+class CommentHandler(BlogHandler):
+    def post(self):
+        # If not a logged in user redirect to login
+        if not self.user:
+            self.redirect('/login')
+        else:
+            comment = self.request.get('comment')
+            post_id = int(self.request.get('post_id'))
+            post = Post.get_by_id(post_id, parent=blog_key())
+            author = self.user
+            if not comment:
+                return # do nothing if empty comment
+            else:
+                c = Comment(content = comment, author = author.key, post = post.key)
+                c.put()
+                comment = Comment.render_single_comment(c)
+                # return JSON to Ajax
+                self.write(json.dumps(({'comment': comment})))

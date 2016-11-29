@@ -28,8 +28,35 @@
 <!-- Only display like button if user is not the author of a post -->
 <div>
     <a href="#" class="like" data-key="{{ p.key.id() }}">
-        <span>{{p.likes}}</span> Likes
+        <span>{{ p.likes }}</span> Likes
     </a>
 </div>
-{% endif %}
-{% endif %}
+<!-- Comments -->
+<div class="comments">
+    <!-- when user clicks on placeholder, comment form will display
+    ** This form is for adding comments to the post itself -->
+    <div class="comment-placeholder col-xs-12">
+        <p>Say something about it</p>
+    </div>
+    <form method="post" class="comment-input-form row" style="display: None">
+        <label class="col-xs-12">
+            <textarea name="comment" class="comment-input col-xs-12" placeholder="Leave a comment."></textarea>
+            <a href="#" data-postid="{{ p.key.id() }}" class="submit-button">Say it</a> |
+            <a href="#" class="cancel-comment">Cancel</a>
+        </label>
+    </form>
+    {% if error %}
+    <div class="col-xs-12 small">
+        <p class="error">
+            {{error}}
+        </p>
+    </div>
+    {%endif %}
+    <!-- Show all comments for current post -->
+    <div class="comment-list">
+      {% for comment in p.get_comments() %}
+        {{ comment.render(user_id) | safe }}
+      {% endfor %}
+    </div>
+</div>
+{% endif %} {% endif %}

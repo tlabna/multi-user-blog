@@ -3,8 +3,7 @@ import jinja2
 import webapp2
 
 from handlers.util import *
-from models.user import User
-from models.post import Post
+from models.models import Post, User
 
 # Initializing Jinja and directing to the templates directory
 template_dir = os.path.join(os.path.dirname(__file__), '..', 'templates')
@@ -13,7 +12,6 @@ jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
 
 
 def render_str(template, **params):
-    print 'IN JINJA RENDER_STR'
     t = jinja_env.get_template(template)
     return t.render(params)
 

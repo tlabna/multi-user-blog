@@ -3,7 +3,7 @@
 import re
 
 from handlers.bloghandler import BlogHandler
-from models.user import User
+from models.models import User
 
 USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
 

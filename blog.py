@@ -3,9 +3,9 @@ import webapp2
 from handlers.bloghandler import BlogHandler
 from handlers.loginhandler import Login, Logout
 from handlers.signuphandler import Signup, Register, Welcome
-from handlers.posthandler import NewPost, PostPage, EditDeletePost, DeletePost
+from handlers.posthandler import NewPost, PostPage, EditDeletePost, DeletePost, CommentHandler
 from handlers.likehandler import LikeHandler
-from models.post import Post
+from models.models import Post
 
 from google.appengine.ext import ndb
 
@@ -45,6 +45,7 @@ app = webapp2.WSGIApplication([('/blog/?', BlogFront),
                                ('/blog/welcome', Welcome),
                                ('/blog/edit/(\d+)', EditDeletePost),
                                ('/postdelete.html', DeletePost),
-                               ('/like', LikeHandler)
+                               ('/like', LikeHandler),
+                               ('/comment', CommentHandler)
                                ],
                               debug=True)

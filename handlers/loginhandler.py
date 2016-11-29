@@ -1,7 +1,7 @@
 ''' Module that handles logging in '''
 
 from handlers.bloghandler import BlogHandler
-from models.user import User
+from models.models import User
 
 
 class Login(BlogHandler):

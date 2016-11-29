@@ -1,7 +1,7 @@
 ''' Module to handle User likes '''
 import json
 
-from models.post import Post
+from models.models import Post
 from handlers.bloghandler import BlogHandler
 from handlers.util import blog_key
 

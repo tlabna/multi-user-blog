@@ -1,0 +1,23 @@
+<!-- This form is for users to edit their own posts -->
+<div class="comment-edit-form col-xs-12" style="display: None">
+    <form method="post" class="edit-form">
+        <textarea name="edit-comment" class="comment-input col-xs-12">{{ c.content }}</textarea>
+        <a href="#" data-comment_id="{{ c.key.id() }}" class="save-button">Save</a> |
+        <a href="#" class="cancel-button">Cancel</a>
+    </form>
+    <p class="error">
+    </p>
+</div>
+<div class="comment-single">
+    <p class="grey small border-top">{{ c.author.get().name }} said:</p>
+    <p class="comment-content">
+        {{ c._render_text | safe }}
+    </p>
+    <!-- show edit and delete links only if user is logged in and only for own comments -->
+    {% if user_id %}
+    {% if user_id == c.author.get().key.id() %}
+    <a href="#" class="edit">Edit</a> |
+    <a href="#" data-comment_id="{{ c.key.id() }}" class="delete">Delete</a>
+    {% endif %}
+    {% endif %}
+</div>
