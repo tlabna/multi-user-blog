@@ -99,6 +99,7 @@ class DeletePost(BlogHandler):
 
 
 # Comment Handlers
+
 class CommentHandler(BlogHandler):
     def post(self):
         # If not a logged in user redirect to login
@@ -117,3 +118,37 @@ class CommentHandler(BlogHandler):
                 comment = Comment.render_single_comment(c)
                 # return JSON to Ajax
                 self.write(json.dumps(({'comment': comment})))
+
+
+class EditCommentHandler(BlogHandler):
+    def post(self):
+        if not self.user:
+            self.redirect('/login')
+        else:
+            comment_id = int(self.request.get('comment_id'))
+            new_comment = self.request.get('new_comment')
+            comment = Comment.get_by_id(comment_id)
+            if comment:
+                if comment.author.id() == self.user.key.id():
+                    comment.content = new_comment
+                    comment.put()
+                    self.write(json.dumps(({'comment': self.render_comment(comment.content)})))
+            else:
+                self.write(json.dumps(({'comment': "There was no comment"})))
+
+    def render_comment(self, comment):
+        """ Function to render line breaks just as posts"""
+        comment = comment.replace('\n', '<br>')
+        return comment
+
+class DeleteCommentHandler(BlogHandler):
+    def post(self):
+        if not self.user:
+            self.redirect('/login')
+        else:
+            comment_id = int(self.request.get('comment_id'))
+            comment = Comment.get_by_id(comment_id)
+
+            if self.user.key.id() == comment.author.id():
+                comment.key.delete()
+                self.write(json.dumps(({'success': 'Comment deleted'})))

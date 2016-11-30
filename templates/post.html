@@ -11,7 +11,7 @@
         {{ p._render_text | safe }}
     </div>
 </div>
-<!-- Only logged in users will see these buttons -->
+<!-- Only logged in users will see these buttons and comments -->
 {% if user_id %}
 <!-- If the current user is the author of a post, then show the edit/delete button -->
 {% if p.author.id() == user_id %}
@@ -25,12 +25,13 @@
     </a>
 </div>
 {% else %}
-<!-- Only display like button if user is not the author of a post -->
+<!-- Only allow like button if user is not the author of a post -->
 <div>
     <a href="#" class="like" data-key="{{ p.key.id() }}">
         <span>{{ p.likes }}</span> Likes
     </a>
 </div>
+{% endif %}
 <!-- Comments -->
 <div class="comments">
     <!-- when user clicks on placeholder, comment form will display
@@ -59,4 +60,4 @@
       {% endfor %}
     </div>
 </div>
-{% endif %} {% endif %}
+{% endif %}

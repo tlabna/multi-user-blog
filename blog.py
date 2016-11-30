@@ -3,7 +3,7 @@ import webapp2
 from handlers.bloghandler import BlogHandler
 from handlers.loginhandler import Login, Logout
 from handlers.signuphandler import Signup, Register, Welcome
-from handlers.posthandler import NewPost, PostPage, EditDeletePost, DeletePost, CommentHandler
+from handlers.posthandler import NewPost, PostPage, EditDeletePost, DeletePost, CommentHandler, EditCommentHandler, DeleteCommentHandler
 from handlers.likehandler import LikeHandler
 from models.models import Post
 
@@ -46,6 +46,8 @@ app = webapp2.WSGIApplication([('/blog/?', BlogFront),
                                ('/blog/edit/(\d+)', EditDeletePost),
                                ('/postdelete.html', DeletePost),
                                ('/like', LikeHandler),
-                               ('/comment', CommentHandler)
+                               ('/comment', CommentHandler),
+                               ('/editcomment', EditCommentHandler),
+                               ('/deletecomment', DeleteCommentHandler)
                                ],
                               debug=True)

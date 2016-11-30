@@ -88,11 +88,11 @@ class Comment(ndb.Model):
                     </form>
                   <p class="error"><p>
                 </div>
-                <div class="single-comment single col-xs-12">
+                <div class="comment-single col-xs-12">
                     <p class="grey small border-top">%s said:</p>
                     <p class="comment-content">%s</p>
                     <a href="#" class="edit">Edit</a> |
-                    <a href="#" data-ids="%s" class="delete">Delete</a>
+                    <a href="#" data-comment_id="%s" class="delete">Delete</a>
                 </div>
                 ''' % (comment.content, comment.key.id(), comment.author.get().name, comment.content, comment.key.id())
         return html
