@@ -34,8 +34,7 @@ This website has the purpose of being a basic multi user blog. Users can submit 
 |----------|----------------------|
 | User permissions are appropriate for logged out users. | Logged out users are redirected to the login page when attempting to create, edit, delete, or like a blog post. |
 | User permissions are appropriate for logged in users. | Logged in users can create, edit, or delete blog posts they themselves have created. Users should only be able to like posts once and should not be able to like their own post. |
-| Comment permissions are enforced. | Only signed in users can post comments.
-Users can only edit and delete comments they themselves have made. |
+| Comment permissions are enforced. | Only signed in users can post comments. Users can only edit and delete comments they themselves have made. |
 
 ### Code Quality
 
