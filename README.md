@@ -55,7 +55,7 @@ This website has the purpose of being a basic multi user blog. Users can submit 
 
 The blog runs on Google App Engine.
 
-1. Install the Google App Engine Python SDK go to https://cloud.google.com/appengine/downloads#null.
+1. Install the Google App Engine Python SDK here: https://cloud.google.com/appengine/downloads#null.
 
 2. Once installed sign up for a google app engine acount by following the instructions located at https://sites.google.com/site/gdevelopercodelabs/app-engine/creating-your-app-engine-account
 
@@ -65,7 +65,7 @@ The blog runs on Google App Engine.
 
 5. To run this project locally, open a terminal (command prompt) and navigate to the repository.
 
-6. Under the project repository, run the command: dev_apiserver.py . (This will serve the project locally under localhost)
+6. Under the project repository, run the command: dev_appserver.py . . (This will serve the project locally under localhost)
 
 7. Open your web browser and in the URL bar type: http://localhost:8080/blog (You should now see the blog)
 
