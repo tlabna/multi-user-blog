@@ -5,7 +5,8 @@ from handlers.loginhandler import Login, Logout
 from handlers.signuphandler import Signup, Register, Welcome
 from handlers.posthandler import NewPost, PostPage, EditDeletePost, DeletePost, CommentHandler, EditCommentHandler, DeleteCommentHandler
 from handlers.likehandler import LikeHandler
-from models.models import Post
+from handlers.util import users_key
+from models.models import Post, User
 
 from google.appengine.ext import ndb
 
@@ -19,7 +20,12 @@ class BlogFront(BlogHandler):
         user_id = self.getUserId()
         posts = Post.query().order(-Post.created)
 
-        self.render('front.html', posts=posts, user_id=user_id)
+        if user_id:
+            username = User.get_by_id(user_id, parent=users_key()).name
+            self.render('front.html', posts=posts,
+                        user_id=user_id, username=username)
+        else:
+            self.render('front.html', posts=posts, user_id=user_id)
 
     def post(self):
         action = self.request.get('action')

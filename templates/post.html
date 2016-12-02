@@ -1,4 +1,4 @@
-<div class="post">
+<div class="post row">
     <div class="post-heading">
         <div class="post-title">
             {{ p.subject }}
@@ -10,54 +10,50 @@
     <div class="post-content">
         {{ p._render_text | safe }}
     </div>
-</div>
-<!-- Only logged in users will see these buttons and comments -->
-{% if user_id %}
-<!-- If the current user is the author of a post, then show the edit/delete button -->
-{% if p.author.id() == user_id %}
-<form method="post">
-    <input type="hidden" name="post_id" value="{{ p.key.id() }}">
-    <input type="submit" name="action" value="edit/delete">
-</form>
-<div>
-    <a href="#" class="like-noclick" data-key="{{ p.key.id() }}">
-        <span>{{p.likes}}</span> Likes
-    </a>
-</div>
-{% else %}
-<!-- Only allow like button if user is not the author of a post -->
-<div>
-    <a href="#" class="like" data-key="{{ p.key.id() }}">
-        <span>{{ p.likes }}</span> Likes
-    </a>
-</div>
-{% endif %}
-<!-- Comments -->
-<div class="comments">
-    <!-- when user clicks on placeholder, comment form will display
-    ** This form is for adding comments to the post itself -->
-    <div class="comment-placeholder col-xs-12">
-        <p>Say something about it</p>
-    </div>
-    <form method="post" class="comment-input-form row" style="display: None">
-        <label class="col-xs-12">
-            <textarea name="comment" class="comment-input col-xs-12" placeholder="Leave a comment."></textarea>
-            <a href="#" data-postid="{{ p.key.id() }}" class="submit-button">Say it</a> |
-            <a href="#" class="cancel-comment">Cancel</a>
-        </label>
+    <!-- Only logged in users will see these buttons and comments -->
+    {% if user_id %}
+    <!-- If the current user is the author of a post, then show the edit/delete button -->
+    <form method="post">
+        {% if p.author.id() == user_id %}
+        <div class="form-group">
+            <input type="hidden" name="post_id" class="form-control" value="{{ p.key.id() }}">
+            <button class="btn-primary btn-xs" disabled="disabled">{{p.likes}} Likes</button>
+            <button type="submit" name="action" class="btn btn-default btn-xs" value="edit/delete">Edit/Delete</button>
+        </div>
+        {% else %}
+        <!-- Only allow like button if user is not the author of a post -->
+        <div class="form-group">
+            <button class="btn-primary btn-xs like" data-key="{{ p.key.id() }}"><span>{{ p.likes }}</span> Likes</button>
+        </div>
+        {% endif %}
     </form>
-    {% if error %}
-    <div class="col-xs-12 small">
-        <p class="error">
-            {{error}}
-        </p>
+    <!-- Comments -->
+    <div class="comments small col-xs-12">
+        <!-- when user clicks on placeholder, comment form will display
+      ** This form is for adding comments to the post itself -->
+        <div class="comment-placeholder col-xs-12">
+            <p>Say something about it</p>
+        </div>
+        <form method="post" class="comment-input-form row">
+            <label class="col-xs-12">
+                <textarea name="comment" class="comment-input col-xs-12" placeholder="Leave a comment."></textarea>
+                <a href="#" data-postid="{{ p.key.id() }}" class="submit-button">Say it</a> |
+                <a href="#" class="cancel-comment">Cancel</a>
+            </label>
+        </form>
+        {% if error %}
+        <div class="col-xs-12 small">
+            <p class="error">
+                {{error}}
+            </p>
+        </div>
+        {%endif %}
+        <!-- Show all comments for current post -->
+        <div class="comment-list row">
+            {% for comment in p.get_comments() %}
+              {{ comment.render(user_id) | safe }}
+            {% endfor %}
+        </div>
     </div>
-    {%endif %}
-    <!-- Show all comments for current post -->
-    <div class="comment-list">
-      {% for comment in p.get_comments() %}
-        {{ comment.render(user_id) | safe }}
-      {% endfor %}
-    </div>
+    {% endif %}
 </div>
-{% endif %}

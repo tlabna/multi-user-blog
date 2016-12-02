@@ -12,6 +12,9 @@ class LikeHandler(BlogHandler):
         user_id = self.getUserId()
         post = Post.get_by_id(post_id, parent=blog_key())
 
+        if not user_id:
+            self.redirect('/login')
+
         # Check if user has already liked post
         if user_id in post.liked_by:
             post.likes -= 1

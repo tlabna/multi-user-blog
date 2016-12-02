@@ -3,7 +3,7 @@
 import hashlib
 import hmac
 import random
-import string
+from string import letters
 
 from google.appengine.ext import ndb
 from handlers.secret import SECRET
@@ -34,6 +34,7 @@ def make_pw_hash(name, pw, salt=None):
 def valid_pw(name, password, h):
     salt = h.split(',')[0]
     return h == make_pw_hash(name, password, salt)
+
 
 # Keys for User and Post model for potential future expansion
 def users_key(group='default'):

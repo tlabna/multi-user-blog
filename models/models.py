@@ -13,7 +13,7 @@ class User(ndb.Model):
 
     @classmethod
     def by_id(cls, uid):
-        return User.get_by_id(uid, parent = users_key())
+        return User.get_by_id(uid, parent=users_key())
 
     @classmethod
     def by_name(cls, name):
@@ -23,7 +23,7 @@ class User(ndb.Model):
     @classmethod
     def register(cls, name, pw, email=None):
         pw_hash = make_pw_hash(name, pw)
-        return User(parent = users_key(),
+        return User(parent=users_key(),
                     name=name,
                     pw_hash=pw_hash,
                     email=email)
@@ -60,14 +60,15 @@ class Post(ndb.Model):
     def get_comments(self):
         """helper function to display fetch all comments for their respective
         post from the datastore"""
-        comments = Comment.query(Comment.post == self.key).order(-Comment.created).fetch()
+        comments = Comment.query(
+            Comment.post == self.key).order(-Comment.created).fetch()
         return comments
 
 
 class Comment(ndb.Model):
     content = ndb.StringProperty(required=True)
-    author = ndb.KeyProperty(kind = User, required=True)
-    post = ndb.KeyProperty(kind = Post, required=True)
+    author = ndb.KeyProperty(kind=User, required=True)
+    post = ndb.KeyProperty(kind=Post, required=True)
     created = ndb.DateTimeProperty(auto_now_add=True)
     last_modified = ndb.DateTimeProperty(auto_now=True)
 
@@ -77,10 +78,11 @@ class Comment(ndb.Model):
         self._render_text = self.content.replace('\n', '<br>')
         return render_str('comment.html', c=self, user_id=user_id)
 
-    # HTML that will be rendered dynamically to show user the comment they just submitted
+    # HTML that will be rendered dynamically to show user the comment they
+    # just submitted
     def render_single_comment(comment):
         html = '''
-                <div class="comment-edit-form col-xs-12" style="display: None">
+                <div class="comment-edit-form col-xs-12">
                     <form method="post" class="edit-form">
                         <textarea name="edit-comment" class="comment-input col-xs-12">%s</textarea>
                         <a href="#" data-commentid="%s" class="save-button">Save</a> |
@@ -89,7 +91,7 @@ class Comment(ndb.Model):
                   <p class="error"><p>
                 </div>
                 <div class="comment-single col-xs-12">
-                    <p class="grey small border-top">%s said:</p>
+                    <p class="small" style="color: #80b3ff;">%s said:</p>
                     <p class="comment-content">%s</p>
                     <a href="#" class="edit">Edit</a> |
                     <a href="#" data-comment_id="%s" class="delete">Delete</a>

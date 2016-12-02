@@ -9,7 +9,8 @@ from handlers.util import *
 class NewPost(BlogHandler):
     def get(self):
         if self.user:
-            self.render('newpost.html')
+            self.render('newpost.html', user_id=self.user.key.id(),
+                        username=self.user.name)
         else:
             self.redirect('/login')
 
@@ -36,11 +37,18 @@ class PostPage(BlogHandler):
         key = ndb.Key('Post', int(post_id), parent=blog_key())
         post = key.get()
 
+        # Would be hard to get to permalink without being logged in, However,
+        # if hacker knows id of post they could technically modify a post.
+        # Therefore, redirect if not logged in user
+        if not self.user:
+            self.redirect('/login')
+
         if not post:
             self.error(404)
             return
 
-        self.render("permalink.html", post=post, user_id=post.author.id())
+        self.render("permalink.html", post=post,
+                    user_id=post.author.id(), username=self.user.name)
 
 
 class EditDeletePost(BlogHandler):
@@ -57,7 +65,7 @@ class EditDeletePost(BlogHandler):
         # not redirect to blog
         if post.author.id() == user_id:
             self.render("editpost.html", subject=post.subject,
-                        content=post.content)
+                        content=post.content, user_id=user_id, username=self.user.name)
         else:
             self.redirect('/login')
 
@@ -90,7 +98,8 @@ class EditDeletePost(BlogHandler):
 
         if action == 'delete':
             post_key.delete()
-            self.redirect('/postdelete.html')
+            self.render('/postdelete.html', user_id=user_id,
+                        username=self.user.name)
 
 
 class DeletePost(BlogHandler):
@@ -111,9 +120,9 @@ class CommentHandler(BlogHandler):
             post = Post.get_by_id(post_id, parent=blog_key())
             author = self.user
             if not comment:
-                return # do nothing if empty comment
+                return  # do nothing if empty comment
             else:
-                c = Comment(content = comment, author = author.key, post = post.key)
+                c = Comment(content=comment, author=author.key, post=post.key)
                 c.put()
                 comment = Comment.render_single_comment(c)
                 # return JSON to Ajax
@@ -132,7 +141,8 @@ class EditCommentHandler(BlogHandler):
                 if comment.author.id() == self.user.key.id():
                     comment.content = new_comment
                     comment.put()
-                    self.write(json.dumps(({'comment': self.render_comment(comment.content)})))
+                    self.write(json.dumps(
+                        ({'comment': self.render_comment(comment.content)})))
             else:
                 self.write(json.dumps(({'comment': "There was no comment"})))
 
@@ -140,6 +150,7 @@ class EditCommentHandler(BlogHandler):
         """ Function to render line breaks just as posts"""
         comment = comment.replace('\n', '<br>')
         return comment
+
 
 class DeleteCommentHandler(BlogHandler):
     def post(self):

@@ -3,17 +3,63 @@
 
 <head>
     <link type="text/css" rel="stylesheet" href="/css/main.css" />
+    <link type="text/css" rel="stylesheet" href="/css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="/css/bootstrap-theme.min.css" />
+    <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link type="text/css" href='https://fonts.googleapis.com/css?family=Lato:300,100' rel='stylesheet' />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <title>Tamer's Blog</title>
 </head>
 
 <body>
-    <a href="/blog" class="main-title">
-            Multi User Blog
-        </a>
-    <div id="content">
-        {% block content %} {% endblock %}
-    </div>
+    <nav class="navbar navbar-inverse">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/blog">
+                    <i class="fa fa-rss" aria-hidden="true"></i>
+                </a>
+            </div>
+            <ul class="nav nav-pills">
+                {% if user_id %}
+                <li role="presentation">
+                    <p class="navbar-text navbar-left">Logged in as: {{ username }}</a>
+                </li>
+                {% endif %}
+                <li role="presentation">
+                    <a href="/blog" class="nav-link">Home</a>
+                </li>
+                <!-- Show appropriate options to logged in User -->
+                {% if user_id %}
+                <li role="presentation">
+                    <a href="blog/newpost" class="nav-link">Create Post</a>
+                </li>
+                <li role="presentation">
+                    <a href="/logout" class="nav-link">Logout</a>
+                </li>
+                {% else %}
+                <li role="presentation">
+                    <a href="/login" class="nav-link">Login</a>
+                </li>
+                <li role="presentation">
+                    <a href="/signup" class="nav-link">Sign up</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+    <article class="container">
+        <div class="row">
+            <div class="col-xs-12 text-center">
+                <h1>Multi User Blog</h1>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-6 col-xs-offset-3">
+                {% block content %}
+                {% endblock %}
+            </div>
+        </div>
+    </article>
     <!-- add ajax script at bottom of page so everything is loaded before the script -->
     <script src="/js/script.js"></script>
 </body>
